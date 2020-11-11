@@ -11,113 +11,86 @@ const connection = mysql.createConnection({
     database: "employees"
 });
 
-let roleId;
-
 
 connection.connect(function (err) {
     if (err) throw err;
-    init();
+    start();
 });
 
-function init() {
+function start() {
     const logoText = logo({ name: "Employee Manager" }).render();
     console.log(logoText);
-    startPrompts();
+    loadPrompts();
 }
 
-function startPrompts() {
-    getRoles();
-    getEmployees();
-    inquirer.prompt(
-        {
+function loadPrompts() {
+    inquirer
+    .prompt({
+            name: "mainMenu",
             type: "list",
-            name: "decision",
-            message: "How would you like to get started?",
-            choices: [
-                "Add Employee", "Add Department", "Add Role", "Update Employee Role", "View Deparments", "View Employees", "View Role"
-            ]
-        }).then(answer => {
-            switch (answer.decision) {
-                case "Add Employee":
-                    addEmployee();
-                    break;
-                case "Add Department":
-                    addDepartment();
-                    break;
-                case "Add Role":
-                    addRole();
-                    break;
-                case "Update Employee Role":
-                    updateEmployeeRole();
-                    break;
-                case "View Deparments":
-                    viewDepartments();
-                    break;
-                case "View Employees":
-                    viewEmployees();
-                    break;
-                default:
-                    viewRoles();
-                    break;
-            }
-        })
-}
+            message: "How would you like to do ?",
+            choices: ["View All Employees", "Add Employees", "Update Employee Role", "Remove employee", "Exit"]
+                })
+                .then(function (answer) {
+                    if (answer.mainMenu === "View All Employees") {
+                      viewAll();
+                    }
+                    else if (answer.mainMenu === "Add Employees") {
+                      roleInformation();
+                    }
+                    else if (answer.mainMenu === "Remove employee") {
+                      employeeInforomation();
+                    }
+                    else if (answer.mainMenu === "Update Employee Role") {
+                      updateRole();
+                    }
+                    else if (answer.mainMenu === "Exit") {
+                      connection.end();
+                    }
+                    else {
+                      connection.end();
+                    }
+                  });
+              }
 
-function addEmployee() {
-    connection.query("SELECT * FROM role", function (err, res) {
-        if (err) throw err;
-        inquirer.prompt([
-            {
-                type: "input",
-                name: "firstName",
-                message: "What is the employee's first name?",
-                validate: answer => {
-                    if (answer !== "") {
-                        return true;
-                    }
-                    return "Please enter a valid name";
-                }
-            },
-            {
-                type: "input",
-                name: "lastName",
-                message: "What is the employee's last name?",
-                validate: answer => {
-                    if (answer !== "") {
-                        return true;
-                    }
-                    return "Please enter a valid name";
-                }
-            },
-            {
-                type: "list",
-                name: "role",
-                message: "What is the employee's role ID?",
-                choices: roleArr
-            },
-            {
-                type: "list",
-                name: "manager",
-                message: "Who is the employee's manager?",
-                choices: nameArr
-            }
-        ]).then(answers => {
-            connection.query(
-                "INSERT INTO employee SET ?",
-                {
-                    first_name: answers.firstName,
-                    last_name: answers.lastName,
-                    role_id: 1
-                },
-                function (err,res) {
-                    if (err) throw err
-                    console.log("Successfully added Employee!");
-                    startPrompts();
-                }
-            )
-        });
-    });
-}
+              function addEmployees(roleInformationChoices) {
+                inquirer
+                  .prompt([
+                    {
+                      type: "input",
+                      name: "first_name",
+                      message: "What is the employee's first name?"
+                    },
+                    {
+                      type: "input",
+                      name: "last_name",
+                      message: "What is the employee's last name?"
+                    },
+                    {
+                      type: "list",
+                      name: "roleId",
+                      message: "What is the employee's role?",
+                      choices: roleInformationChoices
+                    },
+                  ])
+                  .then(function (answer) {
+              
+                    var query = `INSERT INTO employee SET ?`
+                    connection.query(query,
+                      {
+                        first_name: answer.first_name,
+                        last_name: answer.last_name,
+                        role_id: answer.roleId,
+                        manager_id: answer.managerId,
+                      },
+                      function (err, res) {
+                        if (err) throw err;
+                        console.log("Employee Inserted successfully!\n");
+              
+                        loadPrompts();
+                      });
+                  });
+              }
 
 function addDepartment() {
     inquirer.prompt(
@@ -135,7 +108,7 @@ function addDepartment() {
             function (err) {
                 if (err) throw err;
                 console.log("Added deparment successfully!");
-                startPrompts();
+                loadPrompts();
             }
         )
     })
@@ -169,7 +142,7 @@ function addRole() {
             function (err) {
                 if (err) throw err;
                 console.log("Added role successfully!");
-                startPrompts();
+                loadPrompts();
             }
         )
     })
@@ -206,7 +179,7 @@ function viewDepartments() {
         function (err, res) {
             if (err) throw err;
             console.table(res);
-            startPrompts();
+            loadPrompts();
         })
 
 
@@ -219,7 +192,7 @@ function viewEmployees() {
             if (err) throw err;
             console.table(res);
 
-            startPrompts();
+            loadPrompts();
         })
 }
 function viewRoles() {
@@ -229,7 +202,7 @@ function viewRoles() {
         function (err, res) {
             if (err) throw err;
             console.table(res);
-            startPrompts();
+            loadPrompts();
         })
 }
 
@@ -249,7 +222,7 @@ function updateRole(employee) {
         function (err) {
             if (err) throw err;
             console.log("Added role successfully!");
-            startPrompts();
+            loadPrompts();
         }
     )
 }
